@@ -10,8 +10,8 @@ DiaStatusDescription::DiaStatusDescription(QWidget *parent)
 {
 	ui->setupUi(this);
 
-	connect(ui->cb_description, SIGNAL(QComboBox::highlighted(int index)),
-			this, SIGNAL(DiaStatusDescription::slotUpdateLDescription));
+	connect(ui->cb_description, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(slotUpdateLDescription(int)));
 }
 
 void DiaStatusDescription::setUpModel(QAbstractItemModel* model)
@@ -22,12 +22,12 @@ void DiaStatusDescription::setUpModel(QAbstractItemModel* model)
 
 void DiaStatusDescription::updateModel(int index)
 {
-	ui->cb_description->setCurrentIndex(index);
+	ui->cb_description->setCurrentIndex(index != -1 ? index : 0);
 }
 
 void DiaStatusDescription::slotUpdateLDescription(int index)
 {
-	ui->label->setText(QVariant(ui->cb_description->currentData(Qt::WhatsThisRole)).toString());
+	ui->te_description->setText(ui->cb_description->itemData(index, Qt::WhatsThisRole).toString());
 }
 
 

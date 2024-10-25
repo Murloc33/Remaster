@@ -18,9 +18,9 @@
     <widget class="QComboBox" name="cb_description"/>
    </item>
    <item>
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>TextLabel</string>
+    <widget class="QTextEdit" name="te_description">
+     <property name="textInteractionFlags">
+      <set>Qt::NoTextInteraction</set>
      </property>
     </widget>
    </item>

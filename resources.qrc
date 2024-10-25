@@ -1,7 +1,9 @@
 <RCC>
-    <qresource prefix="/remaster"/>
     <qresource prefix="/">
         <file>icons/question_mark_active.svg</file>
         <file>icons/question_mark.svg</file>
+        <file>icons/remove.svg</file>
+        <file>icons/done.svg</file>
+        <file>icons/close.svg</file>
     </qresource>
 </RCC>

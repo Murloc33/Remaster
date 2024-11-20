@@ -1,6 +1,6 @@
 #include "cbstatusmodel.h"
 
-#include <dbmanager.h>
+#include "../Manager/dbmanager.h"
 
 CBStatusModel::CBStatusModel()
 {
@@ -19,14 +19,10 @@ QVariant CBStatusModel::data(const QModelIndex &index, int role) const
 		return QVariant();
 	}
 
-	int row = index.row() + 1;
+	int row = index.row();
 
 	if (role == Qt::DisplayRole) {
 		return QVariant(m_status[row].name);
-	}
-
-	if (role == Qt::WhatsThisRole) {
-		return QVariant(m_status[row].description);
 	}
 
 	return QVariant();

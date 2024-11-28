@@ -6,6 +6,7 @@
 
 #include "Dialog/diadescription.h"
 #include "../Model/cbmodel.h"
+#include "customcombobox.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -21,27 +22,35 @@ public:
 	~MainWindow();
 
 private:
-	void setUpCb(QString request, CBModel *model, QComboBox *cb);
+	void setUpCb(QString request, CBModel *model, CustomComboBox *cb, bool *cb_state);
+	void updateCb(QString request, CBModel *model, QMap<QString, QVector<int>> args);
 	void setUpButtons();
 	void setUpConnects();
+	QString getDisciplineRequest();
+
 
 private slots:
 	void slotDiaAgeGroupExec();
-	void slotSetEnabledCbDiscilpine(int index);
+	void slotEnableCb();
+	void slotUpdateModelCb();
 
 private:
 	Ui::MainWindow			*ui;
 
 	struct {
-		bool cb_age_group_enable;
-		bool cb_sex_enable;
-		bool cb_competition_statuses_enable;
+		bool cb_age_group_enable = false;
+		bool cb_competition_statuses_enable = false;
+		bool cb_sex_enable = false;
+		bool cb_discipline_types_enable = false;
+		bool cb_discipline_enable = false;
 	} m_cb_enable;
 
 	struct {
 		CBModel ageGroupModel;
 		CBModel competitionStatusesModel;
 		CBModel sexModel;
+		CBModel disciplineTypesModel;
+		CBModel disciplinesModel;
 	} m_models;
 
 	DiaDescription			*m_diaDescriptionAgeGroup;

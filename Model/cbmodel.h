@@ -11,6 +11,8 @@ public:
 	int rowCount(const QModelIndex &parent) const;
 	QVariant data(const QModelIndex &index, int role) const;
 	void addItems(QVector<DBManager::itemInfo> items);
+	void updateData(QVector<DBManager::itemInfo> items);
+	QMap<QString, int> getItem(int index);
 
 private:
 	QVector<DBManager::itemInfo> m_items;

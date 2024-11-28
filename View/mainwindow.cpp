@@ -2,11 +2,12 @@
 #include "mainwindow.h"
 
 #include <QStandardItemModel>
+#include <QStringBuilder>
 #include <QSqlDatabase>
+#include <QMetaObject>
 #include <QComboBox>
-#include <QDebug>
 #include <QVariant>
-
+#include <QDebug>
 
 #include "Delegate/pbiconswitcher.h"
 #include "Dialog/diadescription.h"
@@ -19,9 +20,16 @@ MainWindow::MainWindow(QWidget *parent)
 {
 	ui->setupUi(this);
 
-	setUpCb(AGE_GROUP_REQUEST, &m_models.ageGroupModel, ui->cb_age_group);
-	setUpCb(COMPETITION_STATUSES_REQUEST, &m_models.competitionStatusesModel, ui->cb_statuses);
-	setUpCb(SEX, &m_models.sexModel, ui->cb_sex);
+	setUpCb(AGE_GROUP_REQUEST, &m_models.ageGroupModel,
+			ui->cb_age_group, &m_cb_enable.cb_age_group_enable);
+	setUpCb(COMPETITION_STATUSES_REQUEST, &m_models.competitionStatusesModel,
+			ui->cb_statuses, &m_cb_enable.cb_competition_statuses_enable);
+	setUpCb(SEX_REQUEST, &m_models.sexModel,
+			ui->cb_sex, &m_cb_enable.cb_sex_enable);
+	setUpCb(DISCIPLINE_TYPES_REQUEST, &m_models.disciplineTypesModel,
+			ui->cb_discipline_types, &m_cb_enable.cb_discipline_types_enable);
+	setUpCb(DISCIPLINE_REQUEST, &m_models.disciplinesModel,
+			ui->cb_discipline, &m_cb_enable.cb_discipline_enable);
 
 	setUpButtons();
 
@@ -33,12 +41,28 @@ MainWindow::MainWindow(QWidget *parent)
 	setUpConnects();
 }
 
-void MainWindow::setUpCb(QString request, CBModel *model, QComboBox *cb)
+void MainWindow::setUpCb(QString request, CBModel *model, CustomComboBox *cb, bool *cb_state)
 {
 	QVector<DBManager::itemInfo> itemVecor = DBManager::instance()->getData(request);
+	cb->setCBState(cb_state);
 	model->addItems(itemVecor);
 	cb->setModel(model);
 	cb->setCurrentIndex(-1);
+
+
+	connect(cb, &CustomComboBox::sigChangedState,
+			this, &MainWindow::slotEnableCb);
+	connect(cb, &CustomComboBox::sigChangedState,
+			this, &MainWindow::slotUpdateModelCb);
+}
+
+void MainWindow::updateCb(QString request, CBModel *model, QMap<QString, QVector<int>> args)
+{
+	QVector<DBManager::itemInfo> itemVecor = DBManager::instance()->getDataWhere(request, args);
+	for (auto item : itemVecor) {
+		qDebug() << item.name;
+	}
+	model->updateData(itemVecor);
 }
 
 void MainWindow::setUpButtons()
@@ -55,13 +79,7 @@ void MainWindow::setUpConnects()
 {
 	connect(ui->pb_age_group_description, &QPushButton::clicked,
 			this, &MainWindow::slotDiaAgeGroupExec);
-
-	connect(ui->cb_sex, SIGNAL(currentIndexChanged(int)),
-			this, SLOT(slotSetEnabledCbDiscilpine(int)));
-	connect(ui->cb_type, SIGNAL(currentIndexChanged(int)),
-			this, SLOT(slotSetEnabledCbDiscilpine(int)));
 }
-
 
 void MainWindow::slotDiaAgeGroupExec()
 {
@@ -69,16 +87,40 @@ void MainWindow::slotDiaAgeGroupExec()
 	m_diaDescriptionAgeGroup->exec();
 }
 
-
-
-void MainWindow::slotSetEnabledCbDiscilpine(int index)
+void MainWindow::slotEnableCb()
 {
-	Q_UNUSED(index)
-	if (ui->cb_type->currentIndex() != -1 && ui->cb_sex->currentIndex() != -1)
-	{
-		ui->cb_discipline->setEnabled(true);
-	} else {
-		ui->cb_discipline->setEnabled(false);
+	if (!ui->cb_discipline_types->isEnabled()) {
+		if (m_cb_enable.cb_sex_enable
+		&& m_cb_enable.cb_competition_statuses_enable
+		&& m_cb_enable.cb_age_group_enable) {
+			ui->cb_discipline_types->setEnabled(true);
+		}
+		return;
+	}
+
+	if (!ui->cb_discipline->isEnabled()) {
+		if (m_cb_enable.cb_discipline_types_enable) {
+			ui->cb_discipline->setEnabled(true);
+		}
+		return;
+	}
+
+
+}
+
+void MainWindow::slotUpdateModelCb()
+{
+	QObject *sender = QObject::sender();
+	if (ui->cb_discipline->isEnabled() && sender->objectName() != ui->cb_discipline->objectName()) {
+		QMap<QString, QVector<int>> args;
+		int sexIndex = ui->cb_sex->currentIndex();
+		args.insert("sex_id", QVector<int> {m_models.sexModel.getItem(sexIndex)["id"], 3});
+
+		int disciplineTypeIndex = ui->cb_discipline_types->currentIndex();
+		args.insert("discipline_type_id", QVector<int> {m_models.disciplineTypesModel.getItem(disciplineTypeIndex)["id"]});
+
+		updateCb(DISCIPLINE_REQUEST, &m_models.disciplinesModel, args);
+		ui->cb_discipline->setCurrentIndex(-1);
 	}
 }
 

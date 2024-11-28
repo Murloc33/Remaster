@@ -22,14 +22,25 @@ QVariant CBModel::data(const QModelIndex &index, int role) const
 		return QVariant(m_items[row].description);
 	}
 
-	if (role == Qt::StatusTipRole) {
-		return QVariant::fromValue<QMap<QString,int>>(m_items[row].otherInfo);
-	}
-
 	return QVariant();
 }
 
 void CBModel::addItems(QVector<DBManager::itemInfo> items)
 {
+	beginResetModel();
 	m_items = items;
+	endResetModel();
+}
+
+void CBModel::updateData(QVector<DBManager::itemInfo> items)
+{
+	beginResetModel();
+	m_items.clear();
+	addItems(items);
+	endResetModel();
+}
+
+QMap<QString, int> CBModel::getItem(int index)
+{
+	return m_items[index].otherInfo;
 }

@@ -11,6 +11,7 @@ SOURCES += \
     Model/cbmodel.cpp \
     Manager/dbmanager.cpp \
     View/Dialog/diadescription.cpp \
+    View/customcombobox.cpp \
     main.cpp \
     View/mainwindow.cpp \
     View/Delegate/pbiconswitcher.cpp
@@ -19,6 +20,7 @@ HEADERS += \
     Model/cbmodel.h \
     Manager/dbmanager.h \
     View/Dialog/diadescription.h \
+    View/customcombobox.h \
     View/mainwindow.h \
     View/Delegate/pbiconswitcher.h
 

@@ -11,8 +11,8 @@
 
 #include "Delegate/pbiconswitcher.h"
 #include "Dialog/diadescription.h"
-#include "../Model/cbmodel.h"
 #include "../Manager/dbmanager.h"
+#include "../Manager/stagemanager.h"
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
@@ -20,50 +20,19 @@ MainWindow::MainWindow(QWidget *parent)
 {
 	ui->setupUi(this);
 
-	setUpCb(AGE_GROUP_REQUEST, &m_models.ageGroupModel,
-			ui->cb_age_group, &m_cb_enable.cb_age_group_enable);
-	setUpCb(COMPETITION_STATUSES_REQUEST, &m_models.competitionStatusesModel,
-			ui->cb_statuses, &m_cb_enable.cb_competition_statuses_enable);
-	setUpCb(SEX_REQUEST, &m_models.sexModel,
-			ui->cb_sex, &m_cb_enable.cb_sex_enable);
-	setUpCb(DISCIPLINE_TYPES_REQUEST, &m_models.disciplineTypesModel,
-			ui->cb_discipline_types, &m_cb_enable.cb_discipline_types_enable);
-	setUpCb(DISCIPLINE_REQUEST, &m_models.disciplinesModel,
-			ui->cb_discipline, &m_cb_enable.cb_discipline_enable);
-
+	setUpAllCB();
+	setUpAllCHB();
+	setUpAllStage();
 	setUpButtons();
+	setUpManager();
 
 	m_diaDescriptionAgeGroup = new DiaDescription(this);
-	m_diaDescriptionAgeGroup->setUpModel(&m_models.ageGroupModel);
-
-
+//	m_diaDescriptionAgeGroup->setUpModel(&m_ageGroupModel);
 
 	setUpConnects();
 }
 
-void MainWindow::setUpCb(QString request, CBModel *model, CustomComboBox *cb, bool *cb_state)
-{
-	QVector<DBManager::itemInfo> itemVecor = DBManager::instance()->getData(request);
-	cb->setCBState(cb_state);
-	model->addItems(itemVecor);
-	cb->setModel(model);
-	cb->setCurrentIndex(-1);
 
-
-	connect(cb, &CustomComboBox::sigChangedState,
-			this, &MainWindow::slotEnableCb);
-	connect(cb, &CustomComboBox::sigChangedState,
-			this, &MainWindow::slotUpdateModelCb);
-}
-
-void MainWindow::updateCb(QString request, CBModel *model, QMap<QString, QVector<int>> args)
-{
-	QVector<DBManager::itemInfo> itemVecor = DBManager::instance()->getDataWhere(request, args);
-	for (auto item : itemVecor) {
-		qDebug() << item.name;
-	}
-	model->updateData(itemVecor);
-}
 
 void MainWindow::setUpButtons()
 {
@@ -79,53 +48,129 @@ void MainWindow::setUpConnects()
 {
 	connect(ui->pb_age_group_description, &QPushButton::clicked,
 			this, &MainWindow::slotDiaAgeGroupExec);
+	connect(ui->cb_discipline_types, &CustomComboBox::currentIndexChanged,
+			this, [this] {
+		ui->cb_discipline->model()->sort(0);
+	});
 }
 
 void MainWindow::slotDiaAgeGroupExec()
 {
 	m_diaDescriptionAgeGroup->updateModel(ui->cb_age_group->currentIndex());
-	m_diaDescriptionAgeGroup->exec();
+//	m_diaDescriptionAgeGroup->exec();
 }
 
-void MainWindow::slotEnableCb()
-{
-	if (!ui->cb_discipline_types->isEnabled()) {
-		if (m_cb_enable.cb_sex_enable
-		&& m_cb_enable.cb_competition_statuses_enable
-		&& m_cb_enable.cb_age_group_enable) {
-			ui->cb_discipline_types->setEnabled(true);
-		}
-		return;
-	}
-
-	if (!ui->cb_discipline->isEnabled()) {
-		if (m_cb_enable.cb_discipline_types_enable) {
-			ui->cb_discipline->setEnabled(true);
-		}
-		return;
-	}
-
-
-}
-
-void MainWindow::slotUpdateModelCb()
-{
-	QObject *sender = QObject::sender();
-	if (ui->cb_discipline->isEnabled() && sender->objectName() != ui->cb_discipline->objectName()) {
-		QMap<QString, QVector<int>> args;
-		int sexIndex = ui->cb_sex->currentIndex();
-		args.insert("sex_id", QVector<int> {m_models.sexModel.getItem(sexIndex)["id"], 3});
-
-		int disciplineTypeIndex = ui->cb_discipline_types->currentIndex();
-		args.insert("discipline_type_id", QVector<int> {m_models.disciplineTypesModel.getItem(disciplineTypeIndex)["id"]});
-
-		updateCb(DISCIPLINE_REQUEST, &m_models.disciplinesModel, args);
-		ui->cb_discipline->setCurrentIndex(-1);
-	}
-}
 
 MainWindow::~MainWindow()
 {
 	delete ui;
 }
+
+void MainWindow::setUpAllCB()
+{
+	setUpCB(AGE_GROUP_REQUEST, ui->cb_age_group, "age_group_id", {}, 7);
+	ui->cb_age_group->fillCB();
+	setUpCB(COMPETITION_STATUSES_REQUEST, ui->cb_statuses, "competition_status_id", {}, -1);
+	ui->cb_statuses->fillCB();
+	setUpCB(SEX_REQUEST, ui->cb_sex, "sex_id", {}, 3);
+	ui->cb_sex->fillCB();
+	setUpCB(DISCIPLINE_TYPES_REQUEST, ui->cb_discipline_types, "discipline_type_id", {}, -1);
+	setUpCB(DISCIPLINE_REQUEST, ui->cb_discipline, "discipline_id", {ui->cb_sex, ui->cb_discipline_types}, -1);
+	setUpCB(DISCIPLINE_CONTENTS_REQUEST, ui->cb_discipline_content, "discipline_content_id",
+			{ui->cb_discipline, ui->cb_sex,ui->cb_age_group}, -1);
+}
+
+void MainWindow::setUpCB(QString request, CustomComboBox *cb, QString pk, QVector<CustomComboBox *> filters, int64_t optionalId)
+{
+	cb->setRequest(request);
+	CBModel *model = new CBModel();
+	cb->setOptionalId(optionalId);
+	cb->setModel(model);
+	cb->setFilters(filters);
+	cb->setPK(pk);
+}
+
+void MainWindow::setUpAllStage()
+{
+	QVector<Stage *> stages;
+	Stage *firstStage = setUpStage(0, {}, {ui->cb_age_group, ui->cb_sex, ui->cb_statuses}, {});
+	stages.push_back(firstStage);
+	Stage *secondStage = setUpStage(1, {}, {ui->cb_discipline_types}, {});
+	stages.push_back(secondStage);
+	Stage *thirdStage = setUpStage(2, {}, {ui->cb_discipline}, {});
+	stages.push_back(thirdStage);
+	Stage *fourthStage = setUpStage(3, {ui->chb_windy_speed, ui->chb_years_old}, {ui->cb_discipline_content}, {ui->le_result});
+	stages.push_back(fourthStage);
+	m_stageManager.setSatges(stages);
+}
+
+Stage *MainWindow::setUpStage(int64_t stageNumber,
+							  QVector<CustomCheckBox *> chbVector,
+							  QVector<CustomComboBox *> cbVector,
+							  QVector<QLineEdit *> leVector)
+{
+	Stage * result = new Stage(stageNumber, chbVector, cbVector, leVector);
+	return result;
+}
+
+void MainWindow::setUpCHB(CustomCheckBox *chb, CustomComboBox *cb, QVector<int64_t> idVector)
+{
+	chb->setFilter({cb, idVector});
+}
+
+void MainWindow::setUpAllCHB()
+{
+	setUpCHB(ui->chb_years_old, ui->cb_age_group, {3});
+	setUpCHB(ui->chb_windy_speed, ui->cb_age_group, {});
+}
+
+void MainWindow::setUpManager()
+{
+	m_resultManager = new ResultManager(ui->l_result, ui->pm_ms, ui->pm_cms);
+
+	connect(ui->cb_age_group, &CustomComboBox::activated,
+			m_resultManager, &ResultManager::slotAcceptInfo);
+	connect(ui->cb_sex, &CustomComboBox::activated,
+			m_resultManager, &ResultManager::slotAcceptInfo);
+	connect(ui->cb_statuses, &CustomComboBox::activated,
+			m_resultManager, &ResultManager::slotAcceptInfo);
+	connect(ui->cb_discipline_types, &CustomComboBox::activated,
+			m_resultManager, &ResultManager::slotAcceptInfo);
+	connect(ui->cb_discipline, &CustomComboBox::activated,
+			m_resultManager, &ResultManager::slotAcceptInfo);
+	connect(ui->cb_discipline_content, &CustomComboBox::activated,
+			m_resultManager, &ResultManager::slotAcceptInfo);
+
+	connect(ui->chb_windy_speed, &CustomCheckBox::stateChanged,
+			m_resultManager, &ResultManager::slotAcceptInfo);
+	connect(ui->chb_years_old, &CustomCheckBox::stateChanged,
+			m_resultManager, &ResultManager::slotAcceptInfo);
+
+	connect(ui->le_count_place, &QLineEdit::textChanged,
+			m_resultManager, &ResultManager::slotAcceptInfo);
+	connect(ui->le_place, &QLineEdit::textChanged,
+			m_resultManager, &ResultManager::slotAcceptInfo);
+	connect(ui->le_result, &QLineEdit::textChanged,
+			m_resultManager, &ResultManager::slotAcceptInfo);
+
+
+
+	QMap<ResultManager::info, CustomComboBox *> cbMap;
+	cbMap.insert(ResultManager::info::age_group, ui->cb_age_group);
+	cbMap.insert(ResultManager::info::sex, ui->cb_sex);
+	cbMap.insert(ResultManager::info::status, ui->cb_statuses);
+	cbMap.insert(ResultManager::info::discipline_type, ui->cb_discipline_types);
+	cbMap.insert(ResultManager::info::discipline, ui->cb_discipline);
+	cbMap.insert(ResultManager::info::discipline_content, ui->cb_discipline_content);
+	m_resultManager->setCB(cbMap);
+	m_resultManager->setCHB({ui->chb_windy_speed, ui->chb_years_old});
+
+	QMap<ResultManager::info, QLineEdit *> leMap;
+	leMap.insert(ResultManager::result, ui->le_result);
+	leMap.insert(ResultManager::place, ui->le_place);
+	leMap.insert(ResultManager::count_place, ui->le_count_place);
+	m_resultManager->setLE(leMap);
+}
+
+
 

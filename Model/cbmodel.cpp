@@ -1,5 +1,10 @@
 #include "cbmodel.h"
 
+CBModel::CBModel()
+{
+
+}
+
 int CBModel::rowCount(const QModelIndex &parent) const
 {
 	Q_UNUSED(parent)
@@ -19,20 +24,20 @@ QVariant CBModel::data(const QModelIndex &index, int role) const
 	}
 
 	if (role == Qt::WhatsThisRole) {
-		return QVariant(m_items[row].description);
+		return  QVariant(m_items[row].description);
 	}
 
 	return QVariant();
 }
 
-void CBModel::addItems(QVector<DBManager::itemInfo> items)
+void CBModel::addItems(QVector<DBManager::Item> items)
 {
 	beginResetModel();
 	m_items = items;
 	endResetModel();
 }
 
-void CBModel::updateData(QVector<DBManager::itemInfo> items)
+void CBModel::updateData(QVector<DBManager::Item> items)
 {
 	beginResetModel();
 	m_items.clear();
@@ -40,7 +45,19 @@ void CBModel::updateData(QVector<DBManager::itemInfo> items)
 	endResetModel();
 }
 
-QMap<QString, int> CBModel::getItem(int index)
+size_t CBModel::count()
 {
-	return m_items[index].otherInfo;
+	return m_items.size();
+}
+
+void CBModel::clear()
+{
+	beginResetModel();
+	m_items.clear();
+	endResetModel();
+}
+
+DBManager::Item CBModel::getItem(int index) const
+{
+	return m_items[index];
 }

@@ -1,21 +1,24 @@
 #ifndef CBMODEL_H
 #define CBMODEL_H
 
-#include <QAbstractListModel>
+#include <QAbstractItemModel>
 
 #include "../Manager/dbmanager.h"
 
 class CBModel : public QAbstractListModel
 {
 public:
-	int rowCount(const QModelIndex &parent) const;
+	CBModel();
 	QVariant data(const QModelIndex &index, int role) const;
-	void addItems(QVector<DBManager::itemInfo> items);
-	void updateData(QVector<DBManager::itemInfo> items);
-	QMap<QString, int> getItem(int index);
+	void updateData(QVector<DBManager::Item> items);
+	int rowCount(const QModelIndex &parent) const;
+	void addItems(QVector<DBManager::Item> items);
+	DBManager::Item getItem(int index) const;
+	size_t count();
+	void clear();
 
 private:
-	QVector<DBManager::itemInfo> m_items;
+	QVector<DBManager::Item> m_items;
 };
 
 #endif // CBMODEL_H

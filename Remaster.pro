@@ -8,21 +8,29 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    Model/cbmodel.cpp \
     Manager/dbmanager.cpp \
+    Manager/resultmanager.cpp \
+    Manager/stagemanager.cpp \
+    Model/cbmodel.cpp \
     View/Dialog/diadescription.cpp \
+    View/customcheckbox.cpp \
     View/customcombobox.cpp \
+    View/stage.cpp \
     main.cpp \
     View/mainwindow.cpp \
     View/Delegate/pbiconswitcher.cpp
 
 HEADERS += \
-    Model/cbmodel.h \
     Manager/dbmanager.h \
+    Manager/resultmanager.h \
+    Manager/stagemanager.h \
+    Model/cbmodel.h \
     View/Dialog/diadescription.h \
+    View/customcheckbox.h \
     View/customcombobox.h \
     View/mainwindow.h \
-    View/Delegate/pbiconswitcher.h
+    View/Delegate/pbiconswitcher.h \
+    View/stage.h
 
 FORMS += \
     View/Dialog/diadescription.ui \

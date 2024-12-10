@@ -6,7 +6,11 @@
 
 #include "Dialog/diadescription.h"
 #include "../Model/cbmodel.h"
+#include "../View/stage.h"
+#include "../Manager/stagemanager.h"
+#include "../Manager/resultmanager.h"
 #include "customcombobox.h"
+#include "customcheckbox.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -22,38 +26,32 @@ public:
 	~MainWindow();
 
 private:
-	void setUpCb(QString request, CBModel *model, CustomComboBox *cb, bool *cb_state);
-	void updateCb(QString request, CBModel *model, QMap<QString, QVector<int>> args);
+	void setUpAllCB();
+	void setUpCB(QString request, CustomComboBox *cb, QString pk,
+				QVector<CustomComboBox *> filters, int64_t optionalId);
+
+	void setUpAllStage();
+	Stage *setUpStage(int64_t stageNumber,
+					  QVector<CustomCheckBox *> chbVector,
+					  QVector<CustomComboBox *> cbVector,
+					  QVector<QLineEdit *> leVector);
+
+	void setUpCHB(CustomCheckBox *chb, CustomComboBox *cb, QVector<int64_t> idVector);
+	void setUpAllCHB();
+
+	void setUpManager();
 	void setUpButtons();
 	void setUpConnects();
-	QString getDisciplineRequest();
-
 
 private slots:
 	void slotDiaAgeGroupExec();
-	void slotEnableCb();
-	void slotUpdateModelCb();
 
 private:
 	Ui::MainWindow			*ui;
 
-	struct {
-		bool cb_age_group_enable = false;
-		bool cb_competition_statuses_enable = false;
-		bool cb_sex_enable = false;
-		bool cb_discipline_types_enable = false;
-		bool cb_discipline_enable = false;
-	} m_cb_enable;
-
-	struct {
-		CBModel ageGroupModel;
-		CBModel competitionStatusesModel;
-		CBModel sexModel;
-		CBModel disciplineTypesModel;
-		CBModel disciplinesModel;
-	} m_models;
-
+	StageManager			m_stageManager;
 	DiaDescription			*m_diaDescriptionAgeGroup;
+	ResultManager			*m_resultManager;
 
 };
 #endif // MAINWINDOW_H
